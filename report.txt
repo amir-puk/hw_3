@@ -1,0 +1,77 @@
+# Docker Compose
+
+$ docker compose --env-file .env.example up -d --build
+
+[+] Running 2/2
+✔ Container hw_3-app-1 Started
+
+$ docker compose ps
+
+NAME           IMAGE       STATUS
+hw_3-app-1     hw_3-app    Up
+
+$ curl http://localhost:8080/
+
+{"greeting":"Hello, Docker!","count":0,"storage":"sqlite"}
+
+$ curl -X POST http://localhost:8080/increment
+
+{"greeting":"Hello, Docker!","count":1,"storage":"sqlite"}
+
+$ docker compose --env-file .env.example up -d --force-recreate
+
+$ curl http://localhost:8080/
+
+{"greeting":"Hello, Docker!","count":1,"storage":"sqlite"}
+
+# Redis
+
+$ docker compose --env-file .env.example down
+$ docker compose --env-file .env.example up -d --build
+
+[+] Running 2/2
+✔ Container hw_3-redis-1 Started
+✔ Container hw_3-app-1 Started
+
+$ docker compose ps
+
+NAME             IMAGE              STATUS
+hw_3-app-1       hw_3-app            Up (healthy)
+hw_3-redis-1     redis:7.4-alpine    Up (healthy)
+
+$ curl http://localhost:8080/
+
+{"greeting":"Hello, Docker!","count":0,"storage":"redis"}
+
+$ curl -X POST http://localhost:8080/increment
+
+{"greeting":"Hello, Docker!","count":1,"storage":"redis"}
+
+$ docker compose --env-file .env.example down
+$ docker compose --env-file .env.example up -d
+
+$ curl http://localhost:8080/
+
+{"greeting":"Hello, Docker!","count":1,"storage":"redis"}
+
+$ docker compose stop redis
+
+$ curl -sS -o /dev/null -w "%{http_code}\n" http://localhost:8080/healthz
+200
+
+$ curl -sS -o /dev/null -w "%{http_code}\n" http://localhost:8080/readyz
+503
+
+$ curl -sS -o /dev/null -w "%{http_code}\n" -X POST http://localhost:8080/increment
+503
+
+$ docker compose start redis
+
+$ curl -i http://localhost:8080/readyz
+
+HTTP/1.0 200 OK
+{"status":"ready","storage":"redis"}
+
+$ curl -X POST http://localhost:8080/increment
+
+{"greeting":"Hello, Docker!","count":2,"storage":"redis"}
